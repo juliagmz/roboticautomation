@@ -1,153 +1,230 @@
 'use strict';
+
 module.exports = function( grunt ) {
   // load all tasks
   require( 'load-grunt-tasks' )( grunt, { scope: 'devDependencies' } );
 
-  grunt.util.linefeed = '\n';
-
-  grunt.initConfig( {
+  grunt.config.init( {
     pkg: grunt.file.readJSON( 'package.json' ),
+
     dirs: {
       css: 'assets/css',
       js: 'assets/js'
     },
-    concat: {
-      epsilonFramework: {
-        src: [
-          'assets/vendors/epsilon-framework/customizer/components/epsilon-object.js',
-          'assets/vendors/epsilon-framework/customizer/components/controls/repeater/repeater-object.js',
-          'assets/vendors/epsilon-framework/customizer/components/controls/section-repeater/section-repeater-object.js',
-          'assets/vendors/epsilon-framework/customizer/components/controls/**/*.js',
-          'assets/vendors/epsilon-framework/customizer/components/sections/**/*.js',
-          'assets/vendors/epsilon-framework/customizer/components/panels/**/*.js',
-          'assets/vendors/epsilon-framework/customizer/components/wp-customize-extenders/**/*.js',
-          'assets/vendors/epsilon-framework/customizer/epsilon.js',
-          '!assets/vendors/epsilon-framework/customizer/epsilon.min.js',
-          '!assets/vendors/epsilon-framework/customizer/epsilon-concat.js'
-        ],
-        dest: 'assets/js/epsilon.js'
-      },
-      epsilonAdmin: {
-        src: [
-          'assets/vendors/epsilon-framework/admin/components/epsilon-admin-object.js',
-          'assets/vendors/epsilon-framework/admin/**/*.js',
-          'assets/vendors/epsilon-framework/admin/epsilon-admin.js',
-          '!assets/vendors/epsilon-framework/admin/epsilon-admin.min.js',
-          '!assets/vendors/epsilon-framework/admin/epsilon-admin-concat.js'
-        ],
-        dest: 'assets/js/epsilon-admin.js'
-      },
-      epsilonPreviewer: {
-        src: [
-          'assets/vendors/epsilon-framework/previewer/components/epsilon-previewer-object.js',
-          'assets/vendors/epsilon-framework/previewer/**/*.js',
-          'assets/vendors/epsilon-framework/previewer/epsilon-previewer.js',
-          '!assets/vendors/epsilon-framework/previewer/epsilon-previewer.min.js',
-          '!assets/vendors/epsilon-framework/previewer/epsilon-previewer-concat.js'
-        ],
-        dest: 'assets/js/epsilon-previewer.js'
-      },
-    },
-    uglify: {
-      epsilon: {
+
+    makepot: {
+      target: {
         options: {
-          sourceMap: false,
-          sourceMapName: 'sourceMap.map'
-        },
-        src: [ 'assets/js/epsilon.js', '!assets/js/epsilon.min.js' ],
-        dest: 'assets/js/epsilon.min.js'
-      },
-      epsilonAdmin: {
-        options: {
-          sourceMap: false,
-          sourceMapName: 'sourceMap.map'
-        },
-        src: [ 'assets/js/epsilon-admin.js', '!assets/js/epsilon-admin.min.js' ],
-        dest: 'assets/js/epsilon-admin.min.js'
-      },
-      epsilonPreviewer: {
-        options: {
-          sourceMap: false,
-          sourceMapName: 'sourceMap.map'
-        },
-        src: [ 'assets/js/epsilon-previewer.js', '!assets/js/epsilon-previewer.min.js' ],
-        dest: 'assets/js/epsilon-previewer.min.js'
+          domainPath: '/languages/',
+          potFilename: '<%= pkg.name %>.pot',
+          potHeaders: {
+            poedit: true,
+            'x-poedit-keywordslist': true
+          },
+          processPot: function( pot, options ) {
+            pot.headers[ 'report-msgid-bugs-to' ] = 'https://www.colorlib.com/';
+            pot.headers[ 'language-team' ] = 'Colorlib <office@colorlib.com>';
+            pot.headers[ 'last-translator' ] = 'Colorlib <office@colorlib.com>';
+            pot.headers[ 'language-team' ] = 'Colorlib <office@colorlib.com>';
+            return pot;
+          },
+          updateTimestamp: true,
+          type: 'wp-theme'
+
+        }
       }
     },
 
-    sass: {
-      dist: {
+    addtextdomain: {
+      target: {
         options: {
-          style: 'expanded',
-          sourcemap: 'none',
+          updateDomains: true,
+          textdomain: '<%= pkg.name %>'
+        },
+        files: {
+          src: [
+            '*.php',
+            '!node_modules/**'
+          ]
+        }
+      }
+    },
+
+    checktextdomain: {
+      standard: {
+        options: {
+          text_domain: [ 'pixova-lite', 'epsilon-framework' ], //Specify allowed domain(s)
+          create_report_file: 'true',
+          keywords: [ //List keyword specifications
+            '__:1,2d',
+            '_e:1,2d',
+            '_x:1,2c,3d',
+            'esc_html__:1,2d',
+            'esc_html_e:1,2d',
+            'esc_html_x:1,2c,3d',
+            'esc_attr__:1,2d',
+            'esc_attr_e:1,2d',
+            'esc_attr_x:1,2c,3d',
+            '_ex:1,2c,3d',
+            '_n:1,2,4d',
+            '_nx:1,2,4c,5d',
+            '_n_noop:1,2,3d',
+            '_nx_noop:1,2,3c,4d'
+          ]
         },
         files: [
           {
-            expand: true,
-            cwd: 'assets/css/',
-            src: [ '*.scss' ],
-            dest: 'assets/css/',
-            ext: '.css'
+            src: [
+              '**/*.php',
+              '!**/node_modules/**',
+            ], //all php
+            expand: true
           } ]
       }
-    }
-  } );
+    },
 
-  grunt.config( 'watch', {
-    js: {
-      files: [
-        'assets/vendors/epsilon-framework/**/*.js',
-        'assets/vendors/epsilon-framework/**/**/*.js',
-        'assets/vendors/epsilon-framework/**/**/**/*.js',
-        'assets/vendors/epsilon-framework/**/**/**/**/*.js' ],
-      tasks: [ 'concat-epsilon' ],
-      options: {
-        spawn: false
+    clean: {
+      init: {
+        src: [ 'build/' ]
+      },
+      build: {
+        src: [
+          'build/*',
+          '!build/<%= pkg.name %>.zip'
+        ]
+      },
+      cssmin: {
+          src: ['layout/css/*.min.css']
+      },
+      jsmin: {
+          src: [
+              'layout/js/*.min.js',
+              'layout/js/*.min.js.map',
+              'layout/js/**/*.min.js',
+              'layout/js/**/*.min.js.map'
+          ]
       }
     },
-    scss: {
-      tasks: [ 'sass:dist' ],
-      files: [
-        'assets/css/*.scss',
-        'assets/css/**/*.scss',
-        'assets/css/**/**/*.scss',
-      ]
-    }
-  } );
 
-  grunt.event.on( 'watch', function( action, filepath ) {
-    // Determine task based on filepath
-    var get_ext = function( path ) {
-      var ret = '';
-      var i = path.lastIndexOf( '.' );
-      if ( - 1 !== i && i <= path.length ) {
-        ret = path.substr( i + 1 );
+    copy: {
+      build: {
+        expand: true,
+        src: [
+          '**',
+          '!node_modules/**',
+          '!vendor/**',
+          '!build/**',
+          '!readme.md',
+          '!README.md',
+          '!phpcs.ruleset.xml',
+          '!Gruntfile.js',
+          '!package.json',
+          '!composer.json',
+          '!composer.lock',
+          '!set_tags.sh',
+          '!pixova-lite.zip',
+          '!nbproject/**' ],
+        dest: 'build/'
       }
-      return ret;
-    };
-    switch ( get_ext( filepath ) ) {
-        // PHP
-      case 'php' :
-        //grunt.config('paths.php.files', [ filepath ]);
-        break;
-        // JavaScript
-      case 'js' :
-        grunt.config( 'paths.js.files', [ filepath ] );
-        break;
-    }
+    },
+
+    cssmin: {
+        target: {
+            files: [{
+                expand: true,
+                cwd: 'layout/css',
+                src: ['*.css', '!*.min.css', '!style-overrides.css'],
+                dest: 'layout/css',
+                ext: '.min.css'
+            }]
+        }
+    },
+
+    uglify: {
+        options: {
+            sourceMap: true,
+            compress: true,
+        },
+        dynamic_mappings: {
+            files: [
+                {
+                    expand: true,     // Enable dynamic expansion.
+                    cwd: 'layout/js/',      // Src matches are relative to this path.
+                    src: ['**/*.js'], // Actual pattern(s) to match.
+                    dest: 'layout/js/',   // Destination path prefix.
+                    ext: '.min.js',   // Dest filepaths will have this extension.
+                    extDot: 'first'   // Extensions in filenames begin after the first dot
+                },
+            ],
+        },
+    },
+
+    compress: {
+      build: {
+        options: {
+          pretty: true,
+          archive: '<%= pkg.name %>.zip'
+        },
+        expand: true,
+        cwd: 'build/',
+        src: [ '**/*' ],
+        dest: '<%= pkg.name %>/'
+      }
+    },
+
+    imagemin: {
+      jpg: {
+        options: {
+          progressive: true
+        }
+      },
+      png: {
+        options: {
+          optimizationLevel: 7
+        }
+      },
+      dynamic: {
+        files: [
+          {
+            expand: true,
+            cwd: 'assets/img/',
+            src: [ '**/*.{png,jpg,gif}' ],
+            dest: 'assets/img/'
+          } ]
+      }
+    },
+
   } );
 
-  grunt.registerTask( 'startSass', [
-    'sass'
+  // Check Missing Text Domain Strings
+  grunt.registerTask( 'textdomain', [
+    'checktextdomain'
   ] );
 
-  // Concatenate Epsilon
-  grunt.registerTask( 'concat-epsilon', [
-    'concat:epsilonFramework',
-    'concat:epsilonAdmin',
-    'concat:epsilonPreviewer',
-    'uglify:epsilon',
-    'uglify:epsilonAdmin',
-    'uglify:epsilonPreviewer'
+  // Minify Images
+  grunt.registerTask( 'minimg', [
+    'imagemin:dynamic'
+  ] );
+
+  // Minify CSS
+  grunt.registerTask( 'mincss', [
+      'clean:cssmin',
+      'cssmin'
+  ]);
+
+  // Minify JS
+  grunt.registerTask( 'minjs', [
+      'clean:jsmin',
+      'uglify'
+  ]);
+
+  // Build task
+  grunt.registerTask( 'build-archive', [
+    'mincss',
+    'minjs',
+    'clean:init',
+    'copy',
+    'compress:build',
+    'clean:init'
   ] );
 };
